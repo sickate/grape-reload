@@ -2,6 +2,7 @@ require 'grape'
 
 module Grape
   class ReloadMiddleware
+    RELOAD_MUTEX = Mutex.new
     class << self
       def [](threshold)
         threshold ||= 2
@@ -22,10 +23,10 @@ CLASS
 
     def call(*args)
       if reload_threshold && (Time.now > (@last || reload_threshold.ago) + 1)
-        Thread.list.size > 1 ? Thread.exclusive { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
+        Thread.list.size > 1 ? Mutex.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
         @last = Time.now
       else
-        Thread.list.size > 1 ? Thread.exclusive { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
+        Thread.list.size > 1 ? Mutex.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
       end
       @app_klass.constantize.call(*args)
     end
