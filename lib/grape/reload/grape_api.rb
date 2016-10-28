@@ -23,10 +23,10 @@ CLASS
 
     def call(*args)
       if reload_threshold && (Time.now > (@last || reload_threshold.ago) + 1)
-        Thread.list.size > 1 ? Mutex.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
+        Thread.list.size > 1 ? RELOAD_MUTEX.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
         @last = Time.now
       else
-        Thread.list.size > 1 ? Mutex.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
+        Thread.list.size > 1 ? RELOAD_MUTEX.synchronize { Grape::Reload::Watcher.reload! } : Grape::Reload::Watcher.reload!
       end
       @app_klass.constantize.call(*args)
     end
